@@ -11,9 +11,11 @@ import frc.robot.commands.Autos;
 import frc.robot.commands.ZeroHeading;
 import frc.robot.subsystems.DriveTrain;
 import frc.robot.subsystems.ExampleSubsystem;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /**
@@ -30,7 +32,8 @@ public class RobotContainer {
   private final ZeroHeading zeroHeading = new ZeroHeading(driveTrain);
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
-  private final CommandXboxController driverController = new CommandXboxController(DriverController.DRIVER_JOYSTICK);
+  //private final CommandXboxController driverController = new CommandXboxController(DriverController.DRIVER_JOYSTICK);
+  private final Joystick joystick = new Joystick(0);
   private final CommandXboxController operatorController = new CommandXboxController(OperatorController.OPERATOR_JOYSTICK);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -39,9 +42,9 @@ public class RobotContainer {
 
     driveTrain.setDefaultCommand(
       new RunCommand(() -> driveTrain.drive(
-        -driverController.getLeftY()*DriveConstants.DRIVE_SPEED, 
-        -driverController.getLeftX()*DriveConstants.DRIVE_SPEED, 
-        -driverController.getRightX()*DriveConstants.DRIVE_SPEED, 
+        -joystick.getRawAxis(1)*DriveConstants.DRIVE_SPEED, 
+        -joystick.getRawAxis(0)*DriveConstants.DRIVE_SPEED, 
+        -joystick.getRawAxis(2)*DriveConstants.DRIVE_SPEED, 
         driveTrain.fieldRelative), 
       driveTrain));
     // Configure the trigger bindings
@@ -58,7 +61,8 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    driverController.start().onTrue(zeroHeading);
+    JoystickButton zeroHeading = new JoystickButton(joystick, 1);
+    zeroHeading.onTrue(new ZeroHeading(driveTrain));
   }
 
   /**

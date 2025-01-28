@@ -63,6 +63,15 @@ public class DriveTrain extends SubsystemBase {
   public void drive(double xSpeed, double ySpeed, double rot,
     boolean fieldRelative)
   {
+    if (Math.abs(xSpeed) < 0.05) {
+      xSpeed = 0;
+    }
+    if (Math.abs(ySpeed) < 0.05) {
+      ySpeed = 0;
+    }
+    if (Math.abs(rot) < 0.2) {
+      rot = 0;
+    }
     double m_xSpeed = xSpeed * DriveConstants.MAX_SPEED_METERS_PER_SECOND;
     double m_ySpeed = ySpeed * DriveConstants.MAX_SPEED_METERS_PER_SECOND;
     double m_rot = rot * DriveConstants.MAX_ANGULAR_SPEED_RADIANS_PER_SECOND;
