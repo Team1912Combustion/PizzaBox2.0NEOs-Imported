@@ -33,41 +33,9 @@ public final class Constants {
 
   }
 
-  public static class DeviceIDs {
-    public static final int SHOOTER_LEFT = 13;
-    public static final int SHOOTER_RIGHT = 12;
-
-    public static final int WRIST_LEFT = 6;
-    public static final int WRIST_RIGHT = 5;
-
-    public static final int FEEDER = 11;
-
-    public static final int INDEXER_LEFT = 10;
-    public static final int INDEXER_RIGHT = 9;
-
-    public static final int INTAKE_BOTTOM = 8;
-    public static final int INTAKE_TOP = 7;
-
-    public static final int CANDLE = 9;
-  }
-
   public static class VisionConstants {
     public static final double TARGET_AREA_THRESHHOLD = 1.5;
     public static final double TOTAL_TARGET_AREA_THRESHHOLD = 3.0;
-  }
-
-  public static class MotorSpeeds {
-    public static final double SHOOTER = 1;
-    public static final double FEEDER  = -0.3;
-    public static final double INDEXER = 0.5;
-    public static final double INTAKE  = -0.3;
-  }
-
-  public static class SensorIDs {
-    public static final int GYRO = 1;
-    public static final int FEEDER_SENSOR_BOTTOM = 0;
-    public static final int INDEXER_SENSOR = 1;
-    public static final int FEEDER_SENSOR_TOP = 2;
   }
 
   public static class DriveConstants {

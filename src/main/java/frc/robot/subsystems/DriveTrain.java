@@ -9,14 +9,15 @@ import com.ctre.phoenix6.hardware.Pigeon2;
 import edu.wpi.first.math.filter.MedianFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.Constants.SensorIDs;
 import frc.robot.Constants.VisionConstants;
 
 public class DriveTrain extends SubsystemBase {
@@ -48,9 +49,10 @@ public class DriveTrain extends SubsystemBase {
       DriveConstants.REAR_RIGHT_TURNING_ENCODER_ID,
       DriveConstants.REAR_RIGHT_MAGNET_OFFSET);
 
-  public final Pigeon2 m_gyro = new Pigeon2(SensorIDs.GYRO, "1912pizzavore");
+  public final Pigeon2 m_gyro = new Pigeon2(0, "1912pizzavore");
 
-  Limelight limelight;
+  LimelightFrontLeft limelightFrontLeft;
+  LimelightFrontRight limelightFrontRight;
 
   public boolean fieldRelative;
 
@@ -58,31 +60,49 @@ public class DriveTrain extends SubsystemBase {
   MedianFilter limelightYFilter;
   MedianFilter limelightYawFilter;
 
+  MedianFilter targetSpaceXFilter;
+  MedianFilter targetSpaceYFilter;
+  MedianFilter targetSpaceYawFilter;
+
   double compositeLatency;
   Pose2d compositeVisionPose;
+  Pose2d compositeTargetSpacePose;
 
   boolean isVisionValid;
+  boolean isTargetSpacePoseValid;
+
+  public XboxController driverController;
 
   /** Creates a new DriveTrain. */
-  public DriveTrain(Limelight l) {
+  public DriveTrain(LimelightFrontLeft lfl, LimelightFrontRight lfr) {
 
-    limelight = l;
+    limelightFrontLeft = lfl;
+    limelightFrontRight = lfr;
     fieldRelative = true;
 
     limelightXFilter = new MedianFilter(3);
     limelightYFilter = new MedianFilter(3);
     limelightYawFilter = new MedianFilter(3);
 
+    targetSpaceXFilter = new MedianFilter(3);
+    targetSpaceYFilter = new MedianFilter(3);
+    targetSpaceYawFilter = new MedianFilter(3);
+
     compositeLatency = 0;
     compositeVisionPose = new Pose2d();
+    compositeTargetSpacePose = new Pose2d();
 
     isVisionValid = true;
+    isTargetSpacePoseValid = true;
+
+    driverController = new XboxController(0);
   }
 
   @Override
   public void periodic() {
     processFrame();
     SmartDashboard.putNumber("gyro", getHeading());
+    SmartDashboard.putNumber("front left position", m_frontLeft.getPosition().angle.getDegrees());
     // This method will be called once per scheduler run
   }
 
@@ -165,13 +185,23 @@ public class DriveTrain extends SubsystemBase {
     double totalArea = 0;
     isVisionValid = false;
 
-    if (limelight.getTagId() > 0) {
-      if (limelight.getTargetArea() > VisionConstants.TARGET_AREA_THRESHHOLD) {
-        totalArea += limelight.getTargetArea();
-        x += limelight.getBotPose2d().getX() * limelight.getTargetArea();
-        y += limelight.getBotPose2d().getY() * limelight.getTargetArea();
-        yaw += limelight.getBotPose2d().getRotation().getDegrees() * limelight.getTargetArea();
-        compositeLatency += limelight.getLatency();
+    if (limelightFrontLeft.getTagId() > 0) {
+      if (limelightFrontLeft.getTargetArea() > VisionConstants.TARGET_AREA_THRESHHOLD) {
+        totalArea += limelightFrontLeft.getTargetArea();
+        x += limelightFrontLeft.getBotPose2d().getX() * limelightFrontLeft.getTargetArea();
+        y += limelightFrontLeft.getBotPose2d().getY() * limelightFrontLeft.getTargetArea();
+        yaw += limelightFrontLeft.getBotPose2d().getRotation().getDegrees() * limelightFrontLeft.getTargetArea();
+        compositeLatency += limelightFrontLeft.getLatency();
+      }
+    }
+
+    if (limelightFrontRight.getTagId() > 0) {
+      if (limelightFrontRight.getTargetArea() > VisionConstants.TARGET_AREA_THRESHHOLD) {
+        totalArea += limelightFrontRight.getTargetArea();
+        x += limelightFrontRight.getBotPose2d().getX() * limelightFrontRight.getTargetArea();
+        y += limelightFrontRight.getBotPose2d().getY() * limelightFrontRight.getTargetArea();
+        yaw += limelightFrontRight.getBotPose2d().getRotation().getDegrees() * limelightFrontRight.getTargetArea();
+        compositeLatency += limelightFrontRight.getLatency();
       }
     } 
 
@@ -192,5 +222,59 @@ public class DriveTrain extends SubsystemBase {
       );
     }
 
+  }
+
+  public void calculateFrameTargetSpace() {
+    double x = 0;
+    double y = 0;
+    double yaw = 0;
+    double totalArea = 0;
+    isTargetSpacePoseValid = false;
+
+    if (limelightFrontLeft.getTagId() > 0) {
+      if (limelightFrontLeft.getTargetArea() > VisionConstants.TARGET_AREA_THRESHHOLD) {
+        totalArea += limelightFrontLeft.getTargetArea();
+        x += limelightFrontLeft.getBotPose2dTargetSpace().getX() * limelightFrontLeft.getTargetArea();
+        y += limelightFrontLeft.getBotPose2dTargetSpace().getY() * limelightFrontLeft.getTargetArea();
+        yaw += limelightFrontLeft.getBotPose2dTargetSpace().getRotation().getDegrees() * limelightFrontLeft.getTargetArea();
+        compositeLatency += limelightFrontLeft.getLatency();
+      }
+    }
+
+    if (limelightFrontRight.getTagId() > 0) {
+      if (limelightFrontRight.getTargetArea() > VisionConstants.TARGET_AREA_THRESHHOLD) {
+        totalArea += limelightFrontRight.getTargetArea();
+        x += limelightFrontRight.getBotPose2dTargetSpace().getX() * limelightFrontRight.getTargetArea();
+        y += limelightFrontRight.getBotPose2dTargetSpace().getY() * limelightFrontRight.getTargetArea();
+        yaw += limelightFrontRight.getBotPose2dTargetSpace().getRotation().getDegrees() * limelightFrontRight.getTargetArea();
+        compositeLatency += limelightFrontRight.getLatency();
+      }
+    } 
+
+    if (totalArea < VisionConstants.TOTAL_TARGET_AREA_THRESHHOLD) {
+      isTargetSpacePoseValid = false;
+      compositeLatency = 0;
+    } else {
+      isTargetSpacePoseValid = true;
+      x /= totalArea;
+      y /= totalArea;
+      yaw /= totalArea;
+      compositeLatency /= totalArea;
+
+      compositeTargetSpacePose = new Pose2d(
+        targetSpaceXFilter.calculate(x),
+        targetSpaceYFilter.calculate(y),
+        Rotation2d.fromDegrees(targetSpaceYawFilter.calculate(yaw))
+      );
+    }
+
+  }
+
+  public Pose2d getPose2dTargetSpace() {
+    return compositeTargetSpacePose;
+  }
+  
+  public boolean isTargetSpacePoseValid() {
+    return isTargetSpacePoseValid;
   }
 }

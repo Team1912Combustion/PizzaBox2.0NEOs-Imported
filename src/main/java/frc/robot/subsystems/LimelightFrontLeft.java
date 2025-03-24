@@ -12,7 +12,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public class Limelight extends SubsystemBase {
+public class LimelightFrontLeft extends SubsystemBase {
   private final NetworkTable table =
 	  NetworkTableInstance.getDefault().getTable(getName());
   private final NetworkTableEntry pipeline = table.getEntry("pipeline");
@@ -28,10 +28,10 @@ public class Limelight extends SubsystemBase {
   private int currentTagId = 0;
 
   public String getName() {
-    return "limelight-f";
+    return "limelight-fl";
   }
   public String getPosition() {
-    return "front";
+    return "frontLeft";
   }
 
   @Override
@@ -65,6 +65,10 @@ public class Limelight extends SubsystemBase {
    */
   public Pose2d getBotPose2d() {
     return new Pose2d(getBotPose()[0],getBotPose()[1], new Rotation2d(Math.toRadians(getBotPose()[5])));
+  }
+
+  public Pose2d getBotPose2dTargetSpace() {
+    return new Pose2d(getBotPoseTargetSpace()[0], getBotPoseTargetSpace()[1], new Rotation2d(Math.toRadians(getBotPoseTargetSpace()[5])));
   }
 
   /**

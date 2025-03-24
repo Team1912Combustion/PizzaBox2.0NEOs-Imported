@@ -7,18 +7,17 @@ package frc.robot.commands;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.DriveTrain;
-import frc.robot.subsystems.Limelight;
+import frc.robot.subsystems.LimelightFrontLeft;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
-public class AlignToReefRight extends Command {
+public class AlignToReef extends Command {
   DriveTrain driveTrain;
-  Limelight limelight;
+  LimelightFrontLeft limelight;
 
   private PIDController xController, yController, rotController;
-  private int tagID = -1;
   private boolean isRightScore;
   /** Creates a new AlignToReefRight. */
-  public AlignToReefRight(DriveTrain dt, Limelight l, boolean isRightScore) {
+  public AlignToReef(DriveTrain dt, LimelightFrontLeft l, boolean isRightScore) {
     driveTrain = dt;
     limelight = l;
     addRequirements(driveTrain);
@@ -42,19 +41,22 @@ public class AlignToReefRight extends Command {
 
     rotController.setSetpoint(0);
     rotController.setTolerance(1);
-
-    tagID = limelight.getTagId();
   }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    if (limelight.getTagId() > 0) {
+    if (driveTrain.isTargetSpacePoseValid()) {
       double[] positions = limelight.getBotPoseTargetSpace();
 
-      double xSpeed = xController.calculate(positions[2]);
-      double ySpeed = -yController.calculate(positions[0]);
-      double rotSpeed = -rotController.calculate(positions[4]);
+      double xSpeed;
+      if (xController.atSetpoint()) {
+        xSpeed = -driveTrain.driverController.getLeftY();
+      } else {
+        xSpeed = xController.calculate(driveTrain.getPose2dTargetSpace().getY());
+      }
+      double ySpeed = -yController.calculate(driveTrain.getPose2dTargetSpace().getX());
+      double rotSpeed = -rotController.calculate(driveTrain.getPose2dTargetSpace().getRotation().getDegrees());
       driveTrain.drive(xSpeed, ySpeed, rotSpeed, false);
     } else {
       driveTrain.drive(0, 0, 0, false);
